@@ -5,7 +5,7 @@ class AR():
     def __init__(self):
         pass
 
-    def get_features(self, image, algorithm='harris', n=100):
+    def get_features(self, image, algorithm='harris', blockSize=2, ksize=3, k=0.04, n=100, qualityLevel=0.02, minDistance=20):
         img = image.copy()
 
         if algorithm == 'None':
@@ -13,14 +13,14 @@ class AR():
         elif algorithm == 'harris':
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             gray_image = np.float32(gray_image)
-            dst = cv2.cornerHarris(gray_image, blockSize=2, ksize=3, k=0.04)
+            dst = cv2.cornerHarris(gray_image, blockSize=blockSize, ksize=(ksize*2)+1, k=k)
             dst = cv2.dilate(dst, None)
             img[dst > 0.01 * dst.max()] = [0, 0, 255]
             return img, dst
         elif algorithm == 'shitomasi':
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             gray_image = np.float32(gray_image)
-            corners = cv2.goodFeaturesToTrack(gray_image, maxCorners=n, qualityLevel=0.02, minDistance=20)
+            corners = cv2.goodFeaturesToTrack(gray_image, maxCorners=n, qualityLevel=qualityLevel, minDistance=minDistance)
             corners = np.float32(corners)
             for item in corners:
                 x, y = item[0]
@@ -30,7 +30,7 @@ class AR():
             return img, corners
         elif algorithm == 'sift':
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            sift = cv2.xfeatures2d.SIFT_create()
+            sift = cv2.xfeatures2d.SIFT_create(nfeatures=n)
             kp, des = sift.detectAndCompute(gray_image, None)
             img = cv2.drawKeypoints(img, kp, None, color=(0, 0, 255), flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
             return img, kp, des
