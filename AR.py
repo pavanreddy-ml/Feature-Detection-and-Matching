@@ -43,7 +43,7 @@ class AR():
         elif algorithm == 'fast':
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             fast = cv2.FastFeatureDetector_create()
-            fast.setNonmaxSuppression()
+            fast.setNonmaxSuppression(0)
             kp = fast.detect(gray_image, 0)
             img = cv2.drawKeypoints(img, kp, None, color=(0, 0, 255))
             return img, kp

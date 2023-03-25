@@ -27,7 +27,7 @@ class GUI():
 
         self.marker_id = 'Marker 1'
         self.augmentation_image_id = ''
-        self.algorithm = 'None'
+        self.algorithm = 'orb'
         self.operation = 'detection'
 
         # IMAGES
@@ -62,7 +62,16 @@ class GUI():
         self.update_image()
 
     def update_image(self):
-        image = ImageTk.PhotoImage(Image.fromarray(self.marker))
+        if self.operation == 'detection':
+            image = ar.get_features(self.marker, algorithm=self.algorithm, n=self.n_features, blockSize=self.block_size,
+                                    ksize=self.k_size, k=self.k, qualityLevel=self.quality_level,
+                                    minDistance=self.min_distance)[0]
+            image = ImageTk.PhotoImage(Image.fromarray(cv2.resize(image, (512, 512))))
+        elif self.operation == 'matching':
+            image = ar.match_features(self.marker, self.marker_to_match)
+            image = ImageTk.PhotoImage(Image.fromarray(image))
+
+
         label = Label(image=image)
         label.image = image
         label.place(relx=0, rely=0, anchor='nw')
@@ -79,14 +88,33 @@ class GUI():
         elif id == 'algorithm':
             self.algorithm = value
 
-        print(self.marker_id, self.augmentation_image_id, self.operation, self.algorithm)
         self.update_environment()
+        self.update_image()
+
+    def slider_action(self, value, id):
+        if id == 'Features':
+            self.n_features = value
+        if id == 'K':
+            self.k = value
+        if id == 'Kernel Size':
+            self.k_size = value
+        if id == 'Quality Level':
+            self.quality_level = value
+        if id == 'Min Distance':
+            self.min_distance = value
+
+
+        print(id, ' updated to: ', value)
         self.update_image()
 
     def update_dropdown_menu(self, dropdown_object, new_menu):
         pass
 
     def update_environment(self):
+        x = 512
+        y = 10
+        label_offset = 19
+
         if self.marker_id == 'Marker 1':
             self.marker = cv2.imread('MarkerIcons01.png')
             self.marker_to_match = cv2.imread('m1.jpg')
@@ -113,12 +141,26 @@ class GUI():
 
 
         if self.algorithm == 'None':
-            pass
-
-
-
-
-
+            for i in self.slider_dict:
+                self.slider_dict[i].destroy()
+        if self.algorithm == 'harris':
+            for i in self.slider_dict:
+                self.slider_dict[i].destroy()
+            self.slider_dict['s1'] = self.create_slider((10, 20), (x + 75, y + 80), 5, "Features",
+                                                        (x + 65, y + label_offset + 80), 0.5)
+            self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, "K",
+                                                        (x + 65, y + label_offset + 120), 0.5)
+            self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, "Kernel Size",
+                                                        (x + 65, y + label_offset + 160), 0.5)
+        if self.algorithm == 'shitomasi':
+            for i in self.slider_dict:
+                self.slider_dict[i].destroy()
+            self.slider_dict['s1'] = self.create_slider((10, 20), (x + 75, y + 80), 5, "Features",
+                                                        (x + 65, y + label_offset + 80), 0.5)
+            self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, "Quality Level",
+                                                        (x + 65, y + label_offset + 120), 0.5)
+            self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, "Min Distance",
+                                                        (x + 65, y + label_offset + 160), 0.5)
 
 
 
@@ -135,11 +177,11 @@ class GUI():
                                                                self.algorithms_menu, 'algorithm')
 
 
-        self.slider_dict['s1'] = self.create_slider((10, 20), (x+75, y+80), 5, None, "Features", (x+65, y+label_offset+80), 0.5)
-        self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, None, "K",
-                                                    (x + 65, y + label_offset + 120), 0.5)
-        self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, None, "K",
-                                                    (x + 65, y + label_offset + 160), 0.5)
+        # self.slider_dict['s1'] = self.create_slider((10, 20), (x+75, y+80), 5, None, "Features", (x+65, y+label_offset+80), 0.5)
+        # self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, None, "K",
+        #                                             (x + 65, y + label_offset + 120), 0.5)
+        # self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, None, "K",
+        #                                             (x + 65, y + label_offset + 160), 0.5)
 
 
     def create_dropdown(self, pos, init_val, menu, id):
@@ -150,9 +192,10 @@ class GUI():
         drop1.configure(width=14)
         return drop1
 
-    def create_slider(self, slider_range, pos, tick_interval, command, label, label_pos, resolution):
+    def create_slider(self, slider_range, pos, tick_interval, label, label_pos, resolution):
         s1 = Scale(self.win, from_=slider_range[0], to=slider_range[1], tickinterval=tick_interval, orient=HORIZONTAL,
-                   command=command, activebackground='red', length=200, resolution=resolution)
+                   command=lambda drop1, id=label:self.slider_action(drop1, id),
+                   activebackground='red', length=200, resolution=resolution)
         s1.place(x=pos[0], y=pos[1], in_=self.win, anchor='nw')
         s1_text = tkinter.Label(self.win, text=label)
         s1_text.place(x=label_pos[0], y=label_pos[1], anchor='ne')
