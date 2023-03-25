@@ -19,12 +19,22 @@ class GUI():
 
         self.win = Tk()
         self.win.geometry(self.window_geometry)
+        # self.frame = Frame(self.win, width=self.frame_width, height=self.frame_heigth)
+        # self.frame.pack()
+        # self.frame.place(anchor='nw', relx=0, rely=0)
+
 
 
         self.marker_id = 'Marker 1'
         self.augmentation_image_id = ''
-        self.algorithm = 'orb'
-        self.operation = 'matching'
+        self.algorithm = 'None'
+        self.operation = 'detection'
+
+        # IMAGES
+        self.marker = cv2.imread('MarkerIcons01.png')
+        self.marker_to_match = cv2.imread('m1.jpg')
+        self.aug_image = cv2.imread('MarkerIcons01.png')
+
 
         # DROPDOWN LISTS
         self.images_menu = ['Marker 1', 'Marker 2', 'Marker 3']
@@ -52,12 +62,11 @@ class GUI():
         self.update_image()
 
     def update_image(self):
-        global image, image2
-        image = ar.match_features(image, image2, det_algorithm=self.algorithm, n=self.n_features)
-        image = ImageTk.PhotoImage(image=Image.fromarray(image))
-        self.frame.place(anchor='nw', relx=0, rely=0)
-        label = Label(self.frame, image=image)
-        label.pack()
+        image = ImageTk.PhotoImage(Image.fromarray(self.marker))
+        label = Label(image=image)
+        label.image = image
+        label.place(relx=0, rely=0, anchor='nw')
+        pass
 
 
     def dropdown_action(self, value, id):
@@ -72,13 +81,39 @@ class GUI():
 
         print(self.marker_id, self.augmentation_image_id, self.operation, self.algorithm)
         self.update_environment()
-        # self.update_image()
+        self.update_image()
 
-
-
+    def update_dropdown_menu(self, dropdown_object, new_menu):
+        pass
 
     def update_environment(self):
-        pass
+        if self.marker_id == 'Marker 1':
+            self.marker = cv2.imread('MarkerIcons01.png')
+            self.marker_to_match = cv2.imread('m1.jpg')
+        elif self.marker_id == 'Marker 2':
+            self.marker = cv2.imread('MarkerIcons02.png')
+            self.marker_to_match = cv2.imread('m2.jpg')
+        elif self.marker_id == 'Marker 3':
+            self.marker = cv2.imread('MarkerIcons03.png')
+            self.marker_to_match = cv2.imread('m2.jpg')
+
+        if self.augmentation_image_id == 'Image 1':
+            self.aug_image = cv2.imread('MarkerIcons01.png')
+        if self.augmentation_image_id == 'Image 2':
+            self.aug_image = cv2.imread('MarkerIcons02.png')
+        if self.augmentation_image_id == 'Image 3':
+            self.aug_image = cv2.imread('MarkerIcons03.png')
+
+        if self.operation == 'detection':
+            self.algorithms_menu = ['None', 'harris', 'shitomasi', 'sift', 'fast', 'orb']
+            self.update_dropdown_menu(self.dropdown_dict['algorithm'], self.algorithms_menu)
+        elif self.operation == 'matching':
+            self.algorithms_menu = ['orb']
+            self.update_dropdown_menu(self.dropdown_dict['algorithm'], self.algorithms_menu)
+
+
+        if self.algorithm == 'None':
+            pass
 
 
 
@@ -89,16 +124,13 @@ class GUI():
 
 
     def init_config(self):
-        self.frame = Frame(self.win, width=self.frame_width, height=self.frame_heigth)
-        self.frame.pack()
-
         x = 512
         y = 10
         label_offset = 19
 
         self.dropdown_dict['markers_list'] = self.create_dropdown((x+10, y), 'Marker 1', self.images_menu, 'markers_list')
         self.dropdown_dict['aug_image'] = self.create_dropdown((x+150, y), 'Aug Image', self.augmentation_image_menu, 'aug_image')
-        self.dropdown_dict['operation'] = self.create_dropdown((x+10, y+40), 'Detection', self.operation_menu, 'operation')
+        self.dropdown_dict['operation'] = self.create_dropdown((x+10, y+40), 'detection', self.operation_menu, 'operation')
         self.dropdown_dict['algorithm'] = self.create_dropdown((x+150, y+40), 'None',
                                                                self.algorithms_menu, 'algorithm')
 
