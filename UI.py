@@ -3,6 +3,7 @@ from PIL import ImageTk, Image
 from AR import AR
 import tkinter
 import cv2
+from Settings import slider_settings
 
 ar = AR()
 image = cv2.imread('MarkerIcons01.png')

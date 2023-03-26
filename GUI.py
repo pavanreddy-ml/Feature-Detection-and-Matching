@@ -3,14 +3,12 @@ from PIL import ImageTk, Image
 from AR import AR
 import tkinter
 import cv2
-
+from Settings import slider_settings, dropdown_settings
 
 ar = AR()
-image = cv2.imread('MarkerIcons01.png')
-image2 = cv2.imread('m1.jpg')
 
 
-class GUI():
+class GUI:
     def __init__(self):
         # TKINTER PARAMS
         self.window_geometry = "800x512"
@@ -19,15 +17,10 @@ class GUI():
 
         self.win = Tk()
         self.win.geometry(self.window_geometry)
-        # self.frame = Frame(self.win, width=self.frame_width, height=self.frame_heigth)
-        # self.frame.pack()
-        # self.frame.place(anchor='nw', relx=0, rely=0)
-
-
 
         self.marker_id = 'Marker 1'
         self.augmentation_image_id = ''
-        self.algorithm = 'orb'
+        self.algorithm = 'None'
         self.operation = 'detection'
 
         # IMAGES
@@ -35,48 +28,52 @@ class GUI():
         self.marker_to_match = cv2.imread('m1.jpg')
         self.aug_image = cv2.imread('MarkerIcons01.png')
 
-
         # DROPDOWN LISTS
         self.images_menu = ['Marker 1', 'Marker 2', 'Marker 3']
         self.augmentation_image_menu = ['Image 1', 'Image 2', 'Image 3']
         self.operation_menu = ['detection', 'matching']
         self.algorithms_menu = ['None', 'harris', 'shitomasi', 'sift', 'fast', 'orb']
 
-        #MANAGEMENT DICTS
+        # MANAGEMENT DICTS
         self.dropdown_dict = dict()
         self.slider_dict = dict()
+        self.params = dict()
 
         # COMMON PARAMS
-        self.n_features = 50
-        self.suppression = 0
+        self.params["Features"] = 50
         # HARRIS CORNER DETECTION PARAMS
-        self.block_size = 2
-        self.k_size = 3
-        self.k = 0.04
+        self.params["Block Size"] = 2
+        self.params["Kernel Size"] = 3
+        self.params["K"] = 0.04
         # SHI-TOMASI PARAMS
-        self.quality_level = 0.02
-        self.min_distance = 20
-
+        self.params["Quality Control"] = 0.02
+        self.params["Min Distance"] = 20
+        # SIFT PARAMS
+        self.params["Contrast Threshold"] = 0.04
+        self.params["Octave Layers"] = 3
+        # FAST PARAMS
+        self.params["Threshold"] = 10
+        self.params["Non Max Suppression"] = 0
+        # ORB PARAMS
+        self.params["Scale Factor"] = 1.2
+        self.params["Levels"] = 8
+        self.params["Edge Threshold"] = 31
 
         self.init_config()
         self.update_image()
 
     def update_image(self):
         if self.operation == 'detection':
-            image = ar.get_features(self.marker, algorithm=self.algorithm, n=self.n_features, blockSize=self.block_size,
-                                    ksize=self.k_size, k=self.k, qualityLevel=self.quality_level,
-                                    minDistance=self.min_distance)[0]
+            image = ar.get_features(self.marker, algorithm=self.algorithm, params=self.params)[0]
             image = ImageTk.PhotoImage(Image.fromarray(cv2.resize(image, (512, 512))))
         elif self.operation == 'matching':
-            image = ar.match_features(self.marker, self.marker_to_match)
+            image = ar.match_features(self.marker, self.marker_to_match, self.params)
             image = ImageTk.PhotoImage(Image.fromarray(image))
-
 
         label = Label(image=image)
         label.image = image
         label.place(relx=0, rely=0, anchor='nw')
         pass
-
 
     def dropdown_action(self, value, id):
         if id == 'markers_list':
@@ -92,23 +89,13 @@ class GUI():
         self.update_image()
 
     def slider_action(self, value, id):
-        if id == 'Features':
-            self.n_features = value
-        if id == 'K':
-            self.k = value
-        if id == 'Kernel Size':
-            self.k_size = value
-        if id == 'Quality Level':
-            self.quality_level = value
-        if id == 'Min Distance':
-            self.min_distance = value
+        if type(self.params[id]) == float:
+            self.params[id] = float(value)
+        if type(self.params[id]) == int:
+            self.params[id] = int(value)
 
-
-        print(id, ' updated to: ', value)
+        print(id, ' updated to: ', self.params[id])
         self.update_image()
-
-    def update_dropdown_menu(self, dropdown_object, new_menu):
-        pass
 
     def update_environment(self):
         x = 512
@@ -134,72 +121,59 @@ class GUI():
 
         if self.operation == 'detection':
             self.algorithms_menu = ['None', 'harris', 'shitomasi', 'sift', 'fast', 'orb']
-            self.update_dropdown_menu(self.dropdown_dict['algorithm'], self.algorithms_menu)
         elif self.operation == 'matching':
             self.algorithms_menu = ['orb']
-            self.update_dropdown_menu(self.dropdown_dict['algorithm'], self.algorithms_menu)
 
+        if self.algorithm not in self.algorithms_menu:
+            self.algorithm = self.algorithms_menu[0]
+        self.dropdown_dict['algorithm'].destroy()
+        self.dropdown_dict['algorithm'] = self.create_dropdown(dropdown_settings['algorithm'], self.algorithm,
+                                                               self.algorithms_menu, 'algorithm')
 
         if self.algorithm == 'None':
             for i in self.slider_dict:
-                self.slider_dict[i].destroy()
-        if self.algorithm == 'harris':
+                self.slider_dict[i][0].destroy()
+                self.slider_dict[i][1].destroy()
+        else:
             for i in self.slider_dict:
-                self.slider_dict[i].destroy()
-            self.slider_dict['s1'] = self.create_slider((10, 20), (x + 75, y + 80), 5, "Features",
-                                                        (x + 65, y + label_offset + 80), 0.5)
-            self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, "K",
-                                                        (x + 65, y + label_offset + 120), 0.5)
-            self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, "Kernel Size",
-                                                        (x + 65, y + label_offset + 160), 0.5)
-        if self.algorithm == 'shitomasi':
-            for i in self.slider_dict:
-                self.slider_dict[i].destroy()
-            self.slider_dict['s1'] = self.create_slider((10, 20), (x + 75, y + 80), 5, "Features",
-                                                        (x + 65, y + label_offset + 80), 0.5)
-            self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, "Quality Level",
-                                                        (x + 65, y + label_offset + 120), 0.5)
-            self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, "Min Distance",
-                                                        (x + 65, y + label_offset + 160), 0.5)
-
-
-
+                self.slider_dict[i][0].destroy()
+                self.slider_dict[i][1].destroy()
+            for i in slider_settings[self.algorithm].keys():
+                self.slider_dict[i] = self.create_slider(slider_settings[self.algorithm][i])
 
     def init_config(self):
-        x = 512
-        y = 10
-        label_offset = 19
-
-        self.dropdown_dict['markers_list'] = self.create_dropdown((x+10, y), 'Marker 1', self.images_menu, 'markers_list')
-        self.dropdown_dict['aug_image'] = self.create_dropdown((x+150, y), 'Aug Image', self.augmentation_image_menu, 'aug_image')
-        self.dropdown_dict['operation'] = self.create_dropdown((x+10, y+40), 'detection', self.operation_menu, 'operation')
-        self.dropdown_dict['algorithm'] = self.create_dropdown((x+150, y+40), 'None',
+        self.dropdown_dict['markers_list'] = self.create_dropdown(dropdown_settings['markers_list'], 'Marker 1',
+                                                                  self.images_menu, 'markers_list')
+        self.dropdown_dict['aug_image'] = self.create_dropdown(dropdown_settings['aug_image'], 'Aug Image',
+                                                               self.augmentation_image_menu, 'aug_image')
+        self.dropdown_dict['operation'] = self.create_dropdown(dropdown_settings['operation'], 'detection',
+                                                               self.operation_menu, 'operation')
+        self.dropdown_dict['algorithm'] = self.create_dropdown(dropdown_settings['algorithm'], 'None',
                                                                self.algorithms_menu, 'algorithm')
 
-
-        # self.slider_dict['s1'] = self.create_slider((10, 20), (x+75, y+80), 5, None, "Features", (x+65, y+label_offset+80), 0.5)
-        # self.slider_dict['s2'] = self.create_slider((10, 20), (x + 75, y + 120), 5, None, "K",
-        #                                             (x + 65, y + label_offset + 120), 0.5)
-        # self.slider_dict['s3'] = self.create_slider((10, 20), (x + 75, y + 160), 5, None, "K",
-        #                                             (x + 65, y + label_offset + 160), 0.5)
-
-
-    def create_dropdown(self, pos, init_val, menu, id):
+    def create_dropdown(self, settings, init_val, menu, id):
         images_dropdown = StringVar()
         images_dropdown.set(init_val)
-        drop1 = OptionMenu(self.win, images_dropdown, *menu, command=lambda drop1, id=id:self.dropdown_action(drop1, id))
-        drop1.place(x=pos[0], y=pos[1], in_=self.win, anchor='nw')
+        drop1 = OptionMenu(self.win, images_dropdown, *menu,
+                           command=lambda drop1, id=id: self.dropdown_action(drop1, id))
+        drop1.place(x=settings['pos'][0], y=settings['pos'][1], in_=self.win, anchor='nw')
         drop1.configure(width=14)
         return drop1
 
-    def create_slider(self, slider_range, pos, tick_interval, label, label_pos, resolution):
-        s1 = Scale(self.win, from_=slider_range[0], to=slider_range[1], tickinterval=tick_interval, orient=HORIZONTAL,
-                   command=lambda drop1, id=label:self.slider_action(drop1, id),
-                   activebackground='red', length=200, resolution=resolution)
-        s1.place(x=pos[0], y=pos[1], in_=self.win, anchor='nw')
-        s1_text = tkinter.Label(self.win, text=label)
-        s1_text.place(x=label_pos[0], y=label_pos[1], anchor='ne')
-        return s1
+    def create_slider(self, settings):
+        s1 = Scale(self.win,
+                   from_=settings['range'][0],
+                   to=settings['range'][1],
+                   tickinterval=settings['tick_interval'],
+                   orient=HORIZONTAL,
+                   command=lambda drop1, id=settings['label']: self.slider_action(drop1, id),
+                   activebackground='red',
+                   length=200,
+                   resolution=settings['resolution'])
+        s1.place(x=settings['pos'][0], y=settings['pos'][1], in_=self.win, anchor='nw')
+        s1_text = tkinter.Label(self.win, text=settings['label'])
+        s1_text.place(x=settings['label_pos'][0], y=settings['label_pos'][1], anchor='ne')
+        return [s1, s1_text]
 
     def run(self):
         self.win.mainloop()
