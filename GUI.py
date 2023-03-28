@@ -4,6 +4,7 @@ from AR import AR
 import tkinter
 import cv2
 from Settings import slider_settings, dropdown_settings
+from threading import Thread
 
 ar = AR()
 
@@ -24,6 +25,7 @@ class GUI:
         self.operation = 'detection'
 
         self.is_video = False
+        self.vid_thread = Thread(target=self.run_video)
 
         # IMAGES
         self.marker = cv2.imread('MarkerIcons01.png')
@@ -98,9 +100,41 @@ class GUI:
         if self.is_video == False:
             self.button_dict['video_button'].config(text='Stop Video')
             self.is_video = True
+            self.images_menu = ['Marker 1']
+            self.dropdown_dict['markers_list'] = self.create_dropdown(dropdown_settings['markers_list'], 'Marker 1',
+                                                                      self.images_menu, 'markers_list')
+            self.marker_id = 'Marker 1'
+            self.vid_thread.start()
         else:
             self.button_dict['video_button'].config(text='Start Video')
             self.is_video = False
+            self.images_menu = ['Marker 1', 'Marker 2', 'Marker 3']
+            self.dropdown_dict['markers_list'] = self.create_dropdown(dropdown_settings['markers_list'], 'Marker 1',
+                                                                      self.images_menu, 'markers_list')
+            self.marker_id = 'Marker 1'
+            self.vid_thread = Thread(target=self.run_video)
+
+        self.update_environment()
+        self.update_image()
+
+    def run_video(self):
+        cap = cv2.VideoCapture('vid.mp4')
+        while (cap.isOpened()):
+            if self.is_video == False:
+                return
+
+            ret, frame = cap.read()
+            if ret:
+                frame = cv2.resize(frame, (256, 256))
+                self.marker_to_match = frame.copy()
+            else:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                continue
+
+            self.update_image()
+            cv2.waitKey(24)
+
+        cap.release()
 
     def slider_action(self, value, id):
         if type(self.params[id]) == float:
@@ -112,15 +146,18 @@ class GUI:
         self.update_image()
 
     def update_environment(self):
-        if self.marker_id == 'Marker 1':
+        if not self.is_video:
+            if self.marker_id == 'Marker 1':
+                self.marker = cv2.imread('MarkerIcons01.png')
+                self.marker_to_match = cv2.imread('m1.jpg')
+            elif self.marker_id == 'Marker 2':
+                self.marker = cv2.imread('MarkerIcons02.png')
+                self.marker_to_match = cv2.imread('m2.jpg')
+            elif self.marker_id == 'Marker 3':
+                self.marker = cv2.imread('MarkerIcons03.png')
+                self.marker_to_match = cv2.imread('m3.jpg')
+        else:
             self.marker = cv2.imread('MarkerIcons01.png')
-            self.marker_to_match = cv2.imread('m1.jpg')
-        elif self.marker_id == 'Marker 2':
-            self.marker = cv2.imread('MarkerIcons02.png')
-            self.marker_to_match = cv2.imread('m2.jpg')
-        elif self.marker_id == 'Marker 3':
-            self.marker = cv2.imread('MarkerIcons03.png')
-            self.marker_to_match = cv2.imread('m2.jpg')
 
         if self.augmentation_image_id == 'Image 1':
             self.aug_image = cv2.imread('sq1.jpg')
