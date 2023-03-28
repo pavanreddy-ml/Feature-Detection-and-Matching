@@ -54,21 +54,57 @@ class AR():
 
 
 
-    def match_features(self, source_image, dest_image, params, det_algorithm='orb'):
-        _, kp1, des1 = self.get_features(source_image, algorithm=det_algorithm, params=params)
-        _, kp2, des2 = self.get_features(dest_image, algorithm=det_algorithm, params=params)
+    def match_features(self, marker, frame, aug_image, params, det_algorithm='orb'):
+        marker = cv2.cvtColor(marker, cv2.COLOR_BGR2RGB)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        aug_image = cv2.cvtColor(aug_image, cv2.COLOR_BGR2RGB)
 
-        brute_force = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        no_of_matches = brute_force.match(des1, des2)
+        # Matching
+        _, kp1, des1 = self.get_features(marker, algorithm=det_algorithm, params=params)
+        _, kp2, des2 = self.get_features(frame, algorithm=det_algorithm, params=params)
 
-        no_of_matches = sorted(no_of_matches, key=lambda x: x.distance)
+        brute_force = cv2.BFMatcher()
+        matches = brute_force.knnMatch(des1, des2, k=2)
 
-        output_image = cv2.drawMatches(source_image, kp1, dest_image, kp2, no_of_matches[:params['Features']], None, flags=2)
+        good = []
+        for m, n in matches:
+            if m.distance < 0.75 * n.distance:
+                good.append(m)
 
-        output_image = cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB)
+        srcPts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+        dstPts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+        matrix, mask = cv2.findHomography(srcPts, dstPts, cv2.RANSAC, 5)
 
-        return output_image
+        pts = np.float32([[0, 0], [0, marker.shape[1]], [marker.shape[1], marker.shape[0]], [marker.shape[0], 0]]).reshape(-1, 1, 2)
+        dst = cv2.perspectiveTransform(pts, matrix)
+        x = frame.copy()
+        mat_21 = cv2.polylines(x, [np.int32(dst)], True, (0, 0, 255), 3)
 
+        maskNew = np.zeros((frame.shape[0], frame.shape[1]), np.uint8)
+        cv2.fillPoly(maskNew, [np.int32(dst)], (255, 255, 255))
+        maskInv = cv2.bitwise_not(maskNew)
+
+        mat_22 = cv2.bitwise_and(frame, frame, mask=maskNew)
+        aug_21 = cv2.bitwise_and(frame, frame, mask=maskInv)
+
+        aug_12 = cv2.warpPerspective(aug_image, matrix, (frame.shape[1], frame.shape[0]),
+                                       borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 255, 0))
+
+        aug_22 = cv2.bitwise_or(aug_21, aug_12)
+
+
+
+
+        output_image1 = cv2.drawMatches(marker, kp1, frame, kp2, good, None, flags=2)
+        output_image2 = cv2.hconcat([mat_21, mat_22])
+        matching_output = cv2.vconcat([output_image1, output_image2])
+
+        output_image3 = cv2.hconcat([aug_image, aug_12])
+        output_image4 = cv2.hconcat([aug_21, aug_22])
+        augmentation_output = cv2.vconcat([output_image3, output_image4])
+
+
+        return matching_output, augmentation_output
 
 __name__ = "__main__"
 

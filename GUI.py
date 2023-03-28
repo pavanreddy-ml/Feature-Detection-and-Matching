@@ -19,7 +19,7 @@ class GUI:
         self.win.geometry(self.window_geometry)
 
         self.marker_id = 'Marker 1'
-        self.augmentation_image_id = ''
+        self.augmentation_image_id = 'Image 1'
         self.algorithm = 'None'
         self.operation = 'detection'
 
@@ -31,7 +31,7 @@ class GUI:
         # DROPDOWN LISTS
         self.images_menu = ['Marker 1', 'Marker 2', 'Marker 3']
         self.augmentation_image_menu = ['Image 1', 'Image 2', 'Image 3']
-        self.operation_menu = ['detection', 'matching']
+        self.operation_menu = ['detection', 'matching', 'augmentation']
         self.algorithms_menu = ['None', 'harris', 'shitomasi', 'sift', 'fast', 'orb']
 
         # MANAGEMENT DICTS
@@ -67,7 +67,10 @@ class GUI:
             image = ar.get_features(self.marker, algorithm=self.algorithm, params=self.params)[0]
             image = ImageTk.PhotoImage(Image.fromarray(cv2.resize(image, (512, 512))))
         elif self.operation == 'matching':
-            image = ar.match_features(self.marker, self.marker_to_match, self.params)
+            image = ar.match_features(self.marker, self.marker_to_match, self.aug_image, self.params)[0]
+            image = ImageTk.PhotoImage(Image.fromarray(image))
+        elif self.operation == 'augmentation':
+            image = ar.match_features(self.marker, self.marker_to_match, self.aug_image, self.params)[1]
             image = ImageTk.PhotoImage(Image.fromarray(image))
 
         label = Label(image=image)
@@ -113,15 +116,18 @@ class GUI:
             self.marker_to_match = cv2.imread('m2.jpg')
 
         if self.augmentation_image_id == 'Image 1':
-            self.aug_image = cv2.imread('MarkerIcons01.png')
+            self.aug_image = cv2.imread('sq1.jpg')
         if self.augmentation_image_id == 'Image 2':
-            self.aug_image = cv2.imread('MarkerIcons02.png')
+            self.aug_image = cv2.imread('sq1.jpg')
         if self.augmentation_image_id == 'Image 3':
-            self.aug_image = cv2.imread('MarkerIcons03.png')
+            self.aug_image = cv2.imread('sq1.jpg')
+        self.aug_image = cv2.resize(self.aug_image, (256, 256))
 
         if self.operation == 'detection':
             self.algorithms_menu = ['None', 'harris', 'shitomasi', 'sift', 'fast', 'orb']
         elif self.operation == 'matching':
+            self.algorithms_menu = ['orb']
+        elif self.operation == 'augmentation':
             self.algorithms_menu = ['orb']
 
         if self.algorithm not in self.algorithms_menu:
