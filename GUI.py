@@ -23,6 +23,8 @@ class GUI:
         self.algorithm = 'None'
         self.operation = 'detection'
 
+        self.is_video = False
+
         # IMAGES
         self.marker = cv2.imread('MarkerIcons01.png')
         self.marker_to_match = cv2.imread('m1.jpg')
@@ -37,6 +39,7 @@ class GUI:
         # MANAGEMENT DICTS
         self.dropdown_dict = dict()
         self.slider_dict = dict()
+        self.button_dict = dict()
         self.params = dict()
 
         # COMMON PARAMS
@@ -91,6 +94,14 @@ class GUI:
         self.update_environment()
         self.update_image()
 
+    def video_button_action(self):
+        if self.is_video == False:
+            self.button_dict['video_button'].config(text='Stop Video')
+            self.is_video = True
+        else:
+            self.button_dict['video_button'].config(text='Start Video')
+            self.is_video = False
+
     def slider_action(self, value, id):
         if type(self.params[id]) == float:
             self.params[id] = float(value)
@@ -101,10 +112,6 @@ class GUI:
         self.update_image()
 
     def update_environment(self):
-        x = 512
-        y = 10
-        label_offset = 19
-
         if self.marker_id == 'Marker 1':
             self.marker = cv2.imread('MarkerIcons01.png')
             self.marker_to_match = cv2.imread('m1.jpg')
@@ -118,9 +125,9 @@ class GUI:
         if self.augmentation_image_id == 'Image 1':
             self.aug_image = cv2.imread('sq1.jpg')
         if self.augmentation_image_id == 'Image 2':
-            self.aug_image = cv2.imread('sq1.jpg')
+            self.aug_image = cv2.imread('sq2.jpg')
         if self.augmentation_image_id == 'Image 3':
-            self.aug_image = cv2.imread('sq1.jpg')
+            self.aug_image = cv2.imread('sq3.jpg')
         self.aug_image = cv2.resize(self.aug_image, (256, 256))
 
         if self.operation == 'detection':
@@ -150,12 +157,15 @@ class GUI:
     def init_config(self):
         self.dropdown_dict['markers_list'] = self.create_dropdown(dropdown_settings['markers_list'], 'Marker 1',
                                                                   self.images_menu, 'markers_list')
-        self.dropdown_dict['aug_image'] = self.create_dropdown(dropdown_settings['aug_image'], 'Aug Image',
+        self.dropdown_dict['aug_image'] = self.create_dropdown(dropdown_settings['aug_image'], 'Image 1',
                                                                self.augmentation_image_menu, 'aug_image')
         self.dropdown_dict['operation'] = self.create_dropdown(dropdown_settings['operation'], 'detection',
                                                                self.operation_menu, 'operation')
         self.dropdown_dict['algorithm'] = self.create_dropdown(dropdown_settings['algorithm'], 'None',
                                                                self.algorithms_menu, 'algorithm')
+
+        self.button_dict['video_button'] = Button(text='Start Video', bd='3', width=20, command=self.video_button_action)
+        self.button_dict['video_button'].place(x=512+144, y=10+400, in_=self.win, anchor='center')
 
     def create_dropdown(self, settings, init_val, menu, id):
         images_dropdown = StringVar()
