@@ -76,7 +76,7 @@ class AR():
 
             good = []
             for m, n in matches:
-                if m.distance < 0.75 * n.distance:
+                if m.distance < 0.9 * n.distance:
                     good.append(m)
 
             srcPts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
