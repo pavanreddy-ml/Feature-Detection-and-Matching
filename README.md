@@ -13,19 +13,27 @@ The three steps of Marker Based AR:
 <br/>
 * **Feature Detection:** Extract unique features of a marker from the source image(Unedited image of marker) and the target image(current camera frame). Harris Corner Detection, Shi-Tomasi, SIFT, ORB and FAST are the algorithms demonstrated
 <br/>
+
 ![3](https://user-images.githubusercontent.com/86465783/229004460-7ad97047-1b36-4a44-8723-f594a455edc4.png)
+
 <br/>
 * **Feature Matching:** Match the extracted features between the source and target image and calculate the transformation between the two images. Only ORB is used for Feature Matching.
 <br/>
+
 ![4](https://user-images.githubusercontent.com/86465783/229004473-ebe8d38f-0f65-4e45-ac70-eff8fe9ad932.png)
+
 <br/>
 * **Image Augmentation:** Apply the obtained transformation to the Image that is to be augmented and place it on the target image(frame)
 <br/>
+
 ![5](https://user-images.githubusercontent.com/86465783/229004482-b99cd617-a850-4126-9ad4-ef29e9526602.png)
+
 <br/>
 ## Live Video
 <br/>
+
 https://user-images.githubusercontent.com/86465783/229006071-695fb4a7-5c89-456e-b7e5-04382c2d84fb.mp4
+
 <br/>
 ## Getting Started
 
