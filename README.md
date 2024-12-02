@@ -35,6 +35,7 @@ The three steps of Marker Based AR:
 https://user-images.githubusercontent.com/86465783/229006071-695fb4a7-5c89-456e-b7e5-04382c2d84fb.mp4
 
 <br/>
+
 ## Getting Started
 
 ### Dependencies
